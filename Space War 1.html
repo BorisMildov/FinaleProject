@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>dsa</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+        <script src="Spaceship.js"></script>
+        <script src="Enemy.js"></script>
+        <script src="Bullet.js"></script>
+
+
+        <style media="screen">
+            #start{
+                margin-top: 20px;
+                margin: 0 auto;
+                display: block;
+            }
+            .wrapper{
+                margin: 20px;
+
+            }
+
+            #gameZone{
+                margin: 0 auto;
+                border: 2px solid azure;
+                width: 700px;
+                height: 650px;
+                display: none;
+                background-image:url("./resorces/Space.png"); ;
+            }
+
+            body{
+                background: black;
+            }
+            #score{
+                color: white;
+            }
+            .endGame{
+                padding-top: 100px;
+                text-align: center;
+                font-size: 30px;
+                display: none;
+                color: red;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <button type="button" class="btn btn-success" id="start">Start Game</button>
+        </div>
+
+
+        <div id="gameZone" background='./resorces/space.png'>
+            <div id="score"></div>
+
+
+
+        </div>
+
+        <div class="endGame">
+            Game Over You Are Dead ! </br>
+            Score: <span id="finaleScore"></span>
+
+        </div>
+        <script type="text/javascript">
+
+        $( document ).ready(function() {
+
+
+            var stage = {
+                lives: 5,
+                score: 0
+            };
+
+            var allEnemiesArr = [];
+
+            $('#start').click(function(){
+                $('#start').hide();
+                gameLoop()
+            });
+
+
+
+
+            function addEnemys(){
+
+                var enemyInterval = setInterval(function(){   // tazi f-q se  izpulnqva na opredeleno vreme  !!!!
+
+                    if(stage.lives <= 0){
+                        clearInterval(enemyInterval);
+                    }else{
+                        var y = 15;
+                        var rndX = (Math.round(Math.random() * 10) * 61) + 420;
+                        var enemy = new Enemy(2,3,null,50,30,'black',rndX, y);  //lifes,speed,image,width,height,color,posX,posY
+
+                        enemy.createEnemey();
+                        enemy.startMove();
+                        allEnemiesArr.push(enemy);
+                    }
+
+
+
+                }, 1500);  // vremeto sled koeto se izpulnva vseki put f-qta
+            }
+
+            function gameLoop() {
+
+
+                $('#gameZone').css({'display': 'block'});
+
+
+                var spaceship = new Spaceship('Panzer',10,5,6,16,null,5,70,70,'#888888', Bullet); //name,bullets,lifes,damege,speed,image,firespeed,width,height,color,bulletType
+
+
+
+                spaceship._creatTank();
+
+                addEnemys();
+
+
+                var gameLoopInterval = setInterval(function () {
+
+                    if(stage.lives <= 0){
+                        spaceship.constructor = null;
+
+
+                        clearInterval(gameLoopInterval);
+                    }
+
+                    checkCollision(allEnemiesArr, spaceship._bullets);
+
+                },5);
+            }
+
+
+            function test01(posX) {
+                if(typeof posX == 'number'){
+                    return posX;
+                }
+                posX = posX.replace("px","");   // '100'
+                posX = Number(posX);            // 100
+                return posX
+            }
+
+            function checkCollision(enemies, bullets) {
+
+                if(enemies.length == 0){
+                    return;
+                }
+
+                for(var i = 0; i < enemies.length; i++){
+                    var enemy = enemies[i];
+                    if(!enemy.isActive){continue}
+
+                    var top = enemy.htmlElem.css('top');
+                    top = top.replace("px","");    // '100'
+                    top = Number(top);            // 100
+                    if(top >= 640){
+                        enemy.removeEnemy();
+                        stage.lives--;
+                        if(stage.lives <= 0){
+                            enemies.forEach(function (e) {
+                                $(e.htmlElem).css({'display': 'none'});
+                                e.removeEnemy();
+                            });
+
+                            $('#finaleScore').text(stage.score);
+                            $('#gameZone').css({'display': 'none'});
+                            $('.endGame').css({'display': 'block'});
+                        }
+
+                    }
+
+
+
+
+                    var enemyX_01 = test01(enemy._position.x);
+                    var enemyX_02 = enemyX_01 + enemy._width;
+
+                    var enemyY_01 = enemy._position.y;
+                    var enemyY_02 = enemyY_01 - enemy._height;
+
+                    for(var k = 0; k < bullets.length; k++){
+                        var bullet = bullets[k];
+                        if(!bullet.isActive){continue}
+
+                        var bulletX_01 = test01(bullet._position.x);
+                        var bulletX_02 = bulletX_01 + bullet._width;
+
+                        var bulletY_01 = bullet._position.y - bullet._height;
+                        var bulletY_02 = bullet._position.y;
+
+
+                        if(     (bulletX_01 >= enemyX_01 && bulletX_01 <= enemyX_02) &&
+                                (bulletY_01 < enemyY_01 && bulletY_01 > enemyY_02)){
+
+                            stage.score++;
+                            var score = 'Score: ' + stage.score;
+                            $('#score').text(score);
+
+                            console.log('bullet: X1 = ' + bulletX_01 + ' X2 = ' + bulletX_02);
+                            console.log('bullet: Y1 = ' + bulletY_01 + ' Y2 = ' + bulletY_02);
+                            console.log('--------');
+                            console.log('enemy: X1 = ' + enemyX_01 + ' X2 = ' + enemyX_02);
+                            console.log('enemy: Y1 = ' + enemyY_01 + ' Y2 = ' + enemyY_02);
+
+                            enemy.removeEnemy();
+                            bullet.removeBullet();
+                        }
+
+                    }
+
+                }
+
+            }
+
+
+        });
+
+
+
+
+        </script>
+
+
+    </body>
+</html>
